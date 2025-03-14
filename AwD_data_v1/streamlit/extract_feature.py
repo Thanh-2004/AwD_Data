@@ -235,5 +235,44 @@ def FeatureExtract(y, sf=512):
 
     return features_dict
 
+def STFT_feature(data):
+    f, t, Zxx = sp.signal.stft(data, 512, nperseg=15 * 512, noverlap=14 * 512)
+    delta = np.array([], dtype=float)
+    theta = np.array([], dtype=float)
+    alpha = np.array([], dtype=float)
+    beta = np.array([], dtype=float)
+    for i in range(0, int(t[-1])):
+        indices = np.where((f >= 0.5) & (f <= 4))[0]
+        delta = np.append(delta, np.sum(np.abs(Zxx[indices, i])))
+
+        indices = np.where((f >= 4) & (f <= 8))[0]
+        theta = np.append(theta, np.sum(np.abs(Zxx[indices, i])))
+
+        indices = np.where((f >= 8) & (f <= 13))[0]
+        alpha = np.append(alpha, np.sum(np.abs(Zxx[indices, i])))
+
+        indices = np.where((f >= 13) & (f <= 30))[0]
+        beta = np.append(beta, np.sum(np.abs(Zxx[indices, i])))
+
+    abr = alpha / beta
+    tbr = theta / beta
+    dbr = delta / beta
+    tar = theta / alpha
+    dar = delta / alpha
+    dtabr = (alpha + beta) / (delta + theta)
+
+    diction = {"delta": delta,
+               "theta": theta,
+               "alpha": alpha,
+               "beta": beta,
+               "abr": abr,
+               "tbr": tbr,
+               "dbr": dbr,
+               "tar": tar,
+               "dar": dar,
+               "dtabr": dtabr
+               }
+    return (t,f,Zxx)
+
 
 

@@ -5,9 +5,10 @@ import pandas as pd
 import scipy as sp
 import queue
 import threading
-from extract_feature import FeatureExtract
+from extract_feature import FeatureExtract, STFT_feature
 import pickle
 import time 
+from collections import deque
 
 # def FeatureExtract(data):
 #     f, t, Zxx = sp.signal.stft(data, 512, nperseg=15 * 512, noverlap=14 * 512)
@@ -79,10 +80,11 @@ def collectData(path, time_rec, port, q: queue):
     file = open(path, "r")
 
     x = 0  # iterator of sample
-    y = np.array([], dtype=int)  # value
+    # y = np.array([], dtype=int)  # value
     k = 15  # window
     sample_rate = 512
     window_size = k * sample_rate
+    y = deque([0]* window_size, maxlen=window_size)
 
     model_path = 'gradient.pkl'
 
@@ -99,20 +101,23 @@ def collectData(path, time_rec, port, q: queue):
 
         x += 1
         data = file.readline()
-
-        y = np.append(y, int(data))
+        # y = np.append(y, int(data))
+        y.append(data)
 
         if x >= window_size:
             if x % (1 * sample_rate) == 0:
-                sliding_window_start = x - window_size
-                sliding_window_end = x
-                slide = np.array(y[sliding_window_start:sliding_window_end]) 
+                # slide = np.array(y[sliding_window_start:sliding_window_end]) 
+                slide = np.array(y, dtype=int)
+                print(slide.shape)
+
                 feature_window = FeatureExtract(slide)
 
                 feature_slide = [np.array(list(feature_window.values()))]
 
                 awake_score, status, probabilities = get_AS(loaded_model, feature_slide)
                 signal = get_signal()
+
+                stft_features = STFT_feature(slide)
 
                 result = {
                     'data': slide,
@@ -122,6 +127,7 @@ def collectData(path, time_rec, port, q: queue):
                     'signal': signal,
                     'second': second,
                     'probabilities': probabilities,
+                    'STFT': stft_features
                 }
 
                 q.put(result)

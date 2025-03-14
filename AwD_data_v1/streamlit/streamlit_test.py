@@ -12,70 +12,169 @@ import threading
 from collectData_streamlit import start_thread
 
 
-
 plt.ion()
 
 st.set_page_config(
     page_title = "Data Acquisition",
-    # layout = 'wide'
+    layout = 'wide'
 )
 
 plt.tight_layout() # thêm vào từng hàm tạo figure matplotlib
 
 st.title("Data Acquisition | Real-time Dashboard")
 
+
 def create_progress_bar(percentage: int):
-    fig, ax = plt.subplots(figsize=(10, 1))
-    
+    fig = go.Figure()
+
     green_width = percentage
     red_width = 100 - percentage
-    
-    ax.barh(0, green_width, color='green', height=0.1)
-    ax.barh(0, red_width, left=green_width, color='red', height=0.1)
-    ax.vlines(green_width, ymin=-0.1, ymax=0.1, color='black', linewidth=2)
-    
-    ax.set_xlim(0, 100)
-    ax.set_ylim(-0.2, 0.2)
-    ax.axis('off')  
-    
-    ax.text(green_width - 3, 0, f'{percentage}%', color='white', ha='center', va='center')
+
+    fig.add_trace(go.Bar(
+        x=[green_width],
+        y=[0],
+        orientation='h',
+        marker=dict(color='green'),
+        width=[0.1],
+        name='Progress',
+        text=[f'{percentage}%'],  
+        textposition='inside',   
+        insidetextanchor='middle' 
+    ))
+
+    fig.add_trace(go.Bar(
+        x=[red_width],
+        y=[0],
+        orientation='h',
+        marker=dict(color='red'),
+        width=[0.1],
+        name='Remaining'
+    ))
+
+    fig.update_layout(
+        barmode='stack',
+        # title=f'Progress: {percentage}%',
+        xaxis_title="Percentage",
+        yaxis=dict(showticklabels=False),
+        xaxis=dict(range=[0, 100]),
+        showlegend=False,
+        template="plotly_dark"
+    )
     
     return fig
+
+
 
 def create_bar_chart(probabilities: list[int]):
     tasks = ['Task 1', 'Task 2', 'Task 3', 'Task 4', 'Task 5']
     
-    fig, ax = plt.subplots(figsize=(12, 6))
-    ax.bar(tasks, probabilities, color='lightgreen') 
-    ax.set_title('Probability of Tasks')
-    ax.set_xlabel('Tasks')
-    ax.set_ylabel('Probability (%)')
+    fig = go.Figure([go.Bar(
+        x=tasks,
+        y=probabilities,
+        text=[f'{p*100:.0f}%' for p in probabilities],  
+        textposition='outside', 
+        marker=dict(color='lightgreen')
+    )])
+
+    fig.update_layout(
+        title='Probability of Tasks',
+        xaxis_title='Tasks',
+        yaxis_title='Probability (%)',
+        template="plotly_dark"
+    )
     
     return fig
 
+# Hàm vẽ Raw EEG
 def create_raw_eeg(data: list[int]):
-    fig, ax1 = plt.subplots(figsize=(10, 5))
-    ax1.plot(data)
-    ax1.set_title('EEG Raw Values')
-    ax1.set_xlabel('Samples')
-    ax1.set_ylabel('RawValue')
-    ax1.set_ylim(-256, 256)
+    fig = go.Figure(go.Scatter(
+        x=list(range(len(data))),
+        y=data,
+        mode='lines',
+        line=dict(color='blue')
+    ))
+
+    fig.update_layout(
+        title='EEG Raw Values',
+        xaxis_title='Samples',
+        yaxis_title='RawValue',
+        template="plotly_dark",
+        yaxis=dict(range=[-256, 256])
+    )
+
+    return fig
+
+
+# Hàm vẽ STFT
+def create_STFT(stft_features: tuple):
+    t, f, Zxx = stft_features
+    fig = go.Figure(data=go.Heatmap(
+        z=np.abs(Zxx),
+        x=t,
+        y=f,
+        colorscale='Viridis',
+        colorbar=dict(title='Magnitude'),
+        zmin=-1,
+        zmax=5
+    ))
+
+    fig.update_layout(
+        title='STFT Magnitude',
+        xaxis_title='Time [sec]',
+        yaxis_title='Frequency [Hz]',
+        template="plotly_dark",
+        yaxis=dict(range=[0.5, 40])
+    )
 
     return fig
 
 def create_band_power_chart(diction: dict):
-    fig, ax3 = plt.subplots(figsize=(10, 5))
-    ax3.plot(diction['delta'], label="delta")
-    ax3.plot(diction['theta'], label="theta")
-    ax3.plot(diction['alpha'], label="alpha")
-    ax3.plot(diction['beta'], label="beta")
-    ax3.set_title('Frequency Bands')
-    ax3.set_xlabel('Time [sec]')
-    ax3.set_ylabel('Power')
-    ax3.set_ylim(0, 400)
-    ax3.legend()
+    fig = go.Figure()
+
+    # Chuyển đổi deque thành list hoặc numpy array
+    fig.add_trace(go.Scatter(
+        x=list(range(len(diction['delta']))),
+        y=list(diction['delta']),  # Chuyển deque thành list
+        mode='lines',
+        name='Delta',
+        line=dict(color='blue')
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=list(range(len(diction['theta']))),
+        y=list(diction['theta']),  # Chuyển deque thành list
+        mode='lines',
+        name='Theta',
+        line=dict(color='green')
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=list(range(len(diction['alpha']))),
+        y=list(diction['alpha']),  # Chuyển deque thành list
+        mode='lines',
+        name='Alpha',
+        line=dict(color='orange')
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=list(range(len(diction['beta']))),
+        y=list(diction['beta']),  # Chuyển deque thành list
+        mode='lines',
+        name='Beta',
+        line=dict(color='red')
+    ))
+
+    fig.update_layout(
+        title='Frequency Bands',
+        xaxis_title='Time [sec]',
+        yaxis_title='Power',
+        template="plotly_dark",
+        yaxis=dict(range=[0, 400]),
+        showlegend=True
+    )
 
     return fig
+
 
 def generate_minute_candlestick_data(prev_data, awake_score_1m: deque):
     if prev_data is not None:
@@ -118,7 +217,7 @@ def plot_candlestick(df):
         close=df['Close'],
         increasing_line_color='green',
         decreasing_line_color='red',
-        name="Trend Chart"
+        name="Trend Chart",
     )])
 
     fig.add_trace(go.Scatter(
@@ -136,7 +235,9 @@ def plot_candlestick(df):
         xaxis_rangeslider_visible=False,  
         template="plotly_dark",  
         dragmode="zoom",  
-        showlegend=False
+        showlegend=False,
+        width=800,  # Đặt chiều rộng của biểu đồ
+        height=400  # Đặt chiều cao của biểu đồ
     )
     
     return fig
@@ -154,42 +255,50 @@ def create_candle(awake_score_1m, second):
     return fig
 
 
-def create_dashboard(status: str, signals: deque, probabilities: list[int], data: list[int], diction: dict, awake_score_1m: deque, tick: list[int], second: int):
-    status_col, signal_col, _, time_recorded = st.columns([1,1,1,1])
+def create_dashboard(status: str, signals: deque, probabilities: list[int], data: list[int], diction: dict, awake_score_1m: deque, tick: list[int], second: int, stft_features: tuple):
+    first_col, second_col = st.columns([2,1])
 
-    status_col.metric(label="Status", value=status)
-    signal_col.metric(label="Signal", value=round(signals[-1]), delta = round(signals[-1]) - round(signals[0]))
+    with first_col:
+        as_col, status_col, signal_col, _ = st.columns([1,1,1,1])
 
-    with time_recorded:
-        minute = int(second // 60)
-        sec = int(second % 60)
-        st.write(f"Time Recorded: {minute:02}:{sec:02}")
+        as_col.metric(label="Awake Score", value=round(awake_score_1m[-1]), delta = round(awake_score_1m[-1]) - round(awake_score_1m[-2]))
+        status_col.metric(label="Status", value=status)
+        signal_col.metric(label="Signal", value=round(signals[-1]), delta = round(signals[-1]) - round(signals[0]))
 
-    as_bar, prob_col = st.columns([1, 1])
 
-    with as_bar:
-        as_bar.metric(label="Awake Score", value=round(awake_score_1m[-1]), delta = round(awake_score_1m[-1]) - round(awake_score_1m[-2]))
-        fig = create_progress_bar(awake_score_1m[-1])
-        st.pyplot(fig)
+        as_bar, prob_col = st.columns([1, 1])
 
-    with prob_col:
-        fig = create_bar_chart(probabilities)
-        st.pyplot(fig)
+        with as_bar:
+            fig = create_progress_bar(awake_score_1m[-1])
+            st.plotly_chart(fig, key=f"as_{second}")
 
-    raw_col, band_col = st.columns([0.5, 0.5])
-    with raw_col:
-        fig = create_raw_eeg(data)
-        st.pyplot(fig)
+        with prob_col:
+            fig = create_bar_chart(probabilities)
+            st.plotly_chart(fig, key=f"probabilities_{second}")
 
-    with band_col:
-        fig = create_band_power_chart(diction)
-        st.pyplot(fig)
+        raw_col, band_col = st.columns([0.5, 0.5])
+        with raw_col:
+            fig = create_raw_eeg(data)
+            st.plotly_chart(fig, key=f"raw_{second}")
+
+        with band_col:
+            fig = create_band_power_chart(diction)
+            st.plotly_chart(fig, key=f"band_{second}")
     
     # with spec_col:
     #     pass
 
-    fig = create_candle(tick, second)
-    st.plotly_chart(fig, use_container_width=True, key=f"candlestick_{second}")
+    with second_col:
+        minute = int(second // 60)
+        sec = int(second % 60)
+        second_col.metric(label="Time Recorded", value=f"{minute:02}:{sec:02}")
+        # st.write(f"Time Recorded: {minute:02}:{sec:02}")
+
+        stft_fig = create_STFT(stft_features)
+        st.plotly_chart(stft_fig, key=f"stft_{second}")
+
+        fig = create_candle(tick, second)
+        st.plotly_chart(fig, use_container_width=True, key=f"candlestick_{second}")
 
 def main(port, path, time_rec):
     print("Test main")
@@ -217,30 +326,14 @@ def main(port, path, time_rec):
     while True:
         # print("Loop checking")
         if not data_queue.empty():
-            print("Queue is not empty: ", data_queue.qsize())
+            # print("Queue is not empty: ", data_queue.qsize())
             data_dict = data_queue.get()
 
-            raw_eeg_data, features, awake_score, status, signal, second, probabilities = tuple(data_dict.values())
+            raw_eeg_data, features, awake_score, status, signal, second, probabilities, stft_features = tuple(data_dict.values())
             
             for i, band in enumerate(band_power):
                 band_power[band].append(list(features.values())[i])
 
-
-            # awake_score = np.random.randint(0,100)
-            # status = np.random.choice(["Awake", "Fatigue"])
-            # signal = np.random.randint(0, 100)
-            # probabilities = list(np.random.randint(0, 101, size=5))
-            # raw_eeg_data = list(np.random.randint(-256, 256, size=256))
-            # band_power = {
-            #     'delta': list(np.random.randint(0, 400, size=60)),
-            #     'theta': list(np.random.randint(0, 400, size=60)),
-            #     'alpha': list(np.random.randint(0, 400, size=60)),
-            #     'beta': list(np.random.randint(0, 400, size=60))
-            # }
-
-            # if second == 15:
-            #     awake_score_1m.append(0)
-            #     signals.append(0)
 
             awake_score_1m.append(awake_score)
             signals.append(signal)
@@ -258,7 +351,8 @@ def main(port, path, time_rec):
                     diction=band_power,
                     awake_score_1m=awake_score_1m,
                     tick = tick, 
-                    second = second
+                    second = second,
+                    stft_features = stft_features
                 )
 
 def get_info():
@@ -278,7 +372,7 @@ with info_placeholder.container():
 
 if st.button('Start Recording'):
     info_placeholder.empty()
-    port = "/dev/tty.usbserial-11220"
+    port = "/dev/tty.usbserial-1220"
     path = f"{first_name}_{age}.txt"
     time_rec = int(40*60)
     with st.spinner('Recording...'):
@@ -288,55 +382,6 @@ if st.button('Start Recording'):
         quit()
 
 
-
-
-# if __name__ == "__main__":
-#     awake_score_1m = deque(maxlen=60)
-#     tick = [0]*60
-#     signals = deque(maxlen=2)
-#     placeholder = st.empty()
-
-#     for second in range (300):
-#         print(second)
-#         awake_score = np.random.randint(0, 101)
-#         status = np.random.choice(["Awake", "Fatigue"])
-
-#         signal = np.random.randint(0, 100)
-
-#         probabilities = list(np.random.randint(0, 101, size=5))
-
-#         raw_eeg_data = list(np.random.randint(-256, 256, size=256))
-
-#         band_power = {
-#             'delta': list(np.random.randint(0, 400, size=60)),
-#             'theta': list(np.random.randint(0, 400, size=60)),
-#             'alpha': list(np.random.randint(0, 400, size=60)),
-#             'beta': list(np.random.randint(0, 400, size=60))
-#         }
-
-#         if second == 0:
-#             awake_score_1m.append(0)
-#             signals.append(0)
-
-#         awake_score_1m.append(awake_score)
-#         signals.append(signal)
-
-#         if len(awake_score_1m) == 60:
-#             tick = awake_score_1m
-
-#         # Test hàm dashboard
-#         with placeholder.container():
-#             create_dashboard(
-#                 status=status,
-#                 signals=signals,
-#                 probabilities=probabilities,
-#                 data=raw_eeg_data,
-#                 diction=band_power,
-#                 awake_score_1m=awake_score_1m,
-#                 tick = tick, 
-#                 second = second
-#             )
-#             time.sleep(1)
 
 
 

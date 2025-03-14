@@ -112,7 +112,7 @@ def collectData(path, time_rec, port):
 
 if __name__ == "__main__":
     path = "test.txt"
-    port = "/dev/tty.usbserial-11220"
+    port = "/dev/tty.usbserial-1220"
     time_rec = int(40*60)
 
     collectData(path, time_rec, port)
