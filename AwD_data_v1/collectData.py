@@ -2,6 +2,7 @@ import numpy as np
 import serial
 from plot import *
 import random
+import time
 
 def FeatureExtract(data):
     f, t, Zxx = sp.signal.stft(data, 512, nperseg=15 * 512, noverlap=14 * 512)
@@ -53,7 +54,7 @@ def get_AS(model, feature):
     return awake_score
 
 
-def collectData(path, time_rec, port, image_path, plot=True):
+def collectData(path, time_rec, port):
     if serial.Serial:
         serial.Serial().close()
     # Open the serial port
@@ -66,16 +67,22 @@ def collectData(path, time_rec, port, image_path, plot=True):
     sample_rate = 512
     window_size = k * sample_rate
     feature = []
-
+    
+    start = time.time()
     print("START!")
     while x < (time_rec * 512):
         if x % 512 == 0:
             print(x // 512)
+            end = time.time()
+            print("Time: ", end - start)
         x += 1
-        y = np.append(y, int(data))
+
         data = s.readline().decode('utf-8').rstrip("\r\n")
         file.write(str(data))
         file.write('\n')
+        y = np.append(y, int(data))
+        # print(data)
+
 
         if x >= window_size:
             if x % (1 * sample_rate) == 0:
@@ -89,8 +96,8 @@ def collectData(path, time_rec, port, image_path, plot=True):
                 print("Freq: ", freq_feature.shape)
                 # awake_score = get_AS(loaded_model, freq_feature)
 
-                if plot == True:
-                    create_image(slide, feature_window,image_path)
+                # if plot == True:
+                #     create_image(slide, feature_window,image_path)
 
 
     # Close the serial port
@@ -103,4 +110,10 @@ def collectData(path, time_rec, port, image_path, plot=True):
 
     return 
 
+if __name__ == "__main__":
+    path = "test.txt"
+    port = "/dev/tty.usbserial-11220"
+    time_rec = int(40*60)
+
+    collectData(path, time_rec, port)
 
