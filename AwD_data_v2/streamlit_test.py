@@ -8,8 +8,8 @@ import plotly.graph_objects as go
 from collections import deque
 import queue
 import threading
-# from collectData_streamlit_demo import start_thread
-from collectData_streamlit import start_thread
+from collectData_streamlit_demo import start_thread
+# from collectData_streamlit import start_thread
 
 
 plt.ion()
@@ -361,7 +361,7 @@ def get_info():
     last_name = st.text_input("Last name:")
 
     # Nhập tuổi
-    age = st.number_input("Nhập tuổi của bạn:", min_value=0, max_value=120, step=1)
+    age = st.number_input("Your age:", min_value=0, max_value=120, step=1)
 
     return first_name, last_name, age
 

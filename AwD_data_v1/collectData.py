@@ -78,6 +78,7 @@ def collectData(path, time_rec, port):
         x += 1
 
         data = s.readline().decode('utf-8').rstrip("\r\n")
+        print(data)
         file.write(str(data))
         file.write('\n')
         y = np.append(y, int(data))
