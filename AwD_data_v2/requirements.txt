@@ -3,5 +3,8 @@ pandas==1.5.3
 numpy==1.26.4
 pyserial==3.5
 scipy==1.13.1
-matplotlib==3.0.0
 plotly==5.22.0
+scikit-learn==1.4.2
+matplotlib
+pypng
+freetype-py
