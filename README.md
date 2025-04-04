@@ -4,7 +4,7 @@
 
 1. **Clone the repository:**
 ```
-git clone 
+git clone https://github.com/Thanh-2004/AwD_Data
 cd AwD_Data/AwD_data_v2
 ```
 
