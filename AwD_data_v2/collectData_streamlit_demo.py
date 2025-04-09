@@ -37,7 +37,7 @@ def collectData(path, time_rec, port, q: queue):
     #     serial.Serial().close()
     # # Open the serial port
     # s = serial.Serial(port, baudrate=57600)  # COMx in window or /dev/ttyACMx in Ubuntu with x is number of serial port.
-    path = "test_data/BachCalm.txt"
+    path = "AwD_data_v2/test_data/BachCalm.txt"
     file = open(path, "r")
 
     x = 0  # iterator of sample
