@@ -47,7 +47,7 @@ def collectData(path, time_rec, port, q: queue):
     window_size = k * sample_rate
     y = deque([0]* window_size, maxlen=window_size)
 
-    model_path = 'gradient.pkl'
+    model_path = 'AwD_data_v2/gradient.pkl'
 
     with open(model_path, 'rb') as model_file:
         loaded_model = pickle.load(model_file)
